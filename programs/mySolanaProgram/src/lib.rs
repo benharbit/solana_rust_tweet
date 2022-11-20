@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("B8HimySM3zwv5zTcWf5ZC44tBPXLHSADRJB96X18gxjz");
+declare_id!("GxgudfRVS2fdXJ2LWEXCg7y8HUH531xNHMn4hviF77Zh");
 
 #[program]
 pub mod my_solana_program {
@@ -66,13 +66,13 @@ pub mod my_solana_program {
             return err!(Errors::ReachedMaxDislikes);
         }
 
-        let mut iter = tweet.people_who_liked.iter();
+        let mut iter = tweet.people_who_disliked.iter();
         if iter.any(|&v| v == user_disliking_tweet) {
-            return err!(Errors::UserLikedTweet);
+            return err!(Errors::UserDislikedTweet);
         }
 
         tweet.dislikes += 1;
-        tweet.people_who_liked.push(user_disliking_tweet);
+        tweet.people_who_disliked.push(user_disliking_tweet);
 
         Ok(())
     }    
@@ -80,7 +80,7 @@ pub mod my_solana_program {
 
 #[derive(Accounts)]
 pub struct TweetPlatform<'info> {
-    #[account(init, payer = user, space = 15000 )]
+    #[account(init, payer = user, space = 10000 )]
     pub tweet: Account<'info, Tweet>,
     #[account(mut)]
     pub user: Signer<'info>,
@@ -136,4 +136,6 @@ pub enum Errors {
 
     #[msg("User has already liked the tweet")]
     UserLikedTweet,
+    #[msg("User has already disliked the tweet")]
+    UserDislikedTweet,
 }

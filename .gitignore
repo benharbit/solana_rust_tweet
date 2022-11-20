@@ -6,6 +6,5 @@ target
 node_modules
 test-ledger
 **/*.js
-*.ts
-**/*.ts
 **/*.json
+.mysecretkey.json
