@@ -8,3 +8,7 @@ test-ledger
 **/*.js
 **/*.json
 .mysecretkey.json
+debug/
+target/
+doc/
+cargo.lock

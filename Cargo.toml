@@ -1,7 +1,8 @@
 [workspace]
 members = [
-    "programs/*"
+    "programs/mySolanaProgram",
 ]
+exclude = ["client/rust"]
 
 [profile.release]
 overflow-checks = true

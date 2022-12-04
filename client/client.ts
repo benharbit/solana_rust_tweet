@@ -2,11 +2,16 @@ import fs from 'fs';
 import {
     Keypair,
     Connection,
+    PublicKey,
+    Account,
 } from '@solana/web3.js';
+import { createAssociatedTokenAccount, createMint, getOrCreateAssociatedTokenAccount, mintTo, transfer } from '@solana/spl-token';
 import path from 'path';
 import { toGreen, toMagenta } from "./utils"
 const anchor = require("@project-serum/anchor");
 const programId = new anchor.web3.PublicKey("GxgudfRVS2fdXJ2LWEXCg7y8HUH531xNHMn4hviF77Zh");
+
+const TOKEN_ADDRESS: string = "F7xwqJVV7yhucpmpeztAatjteZgAyfuKywNUDLEKeVVN";
 
 console.log(`${toGreen("programId")}: ${programId}`);
 const WALLET_FILE = path.resolve(
@@ -83,7 +88,7 @@ async function likeTweet() {
         fromAccount.publicKey,
         { accounts: { tweet: newAccount.publicKey } }
     );
-    console.log(`likeTweet result: ${likeTweet}`);
+    console.log(`likeTweet txHash: ${likeTweet}`);
 }
 
 async function dislikeTweet() {
@@ -93,7 +98,7 @@ async function dislikeTweet() {
         fromAccount.publicKey,
         { accounts: { tweet: newAccount.publicKey } }
     );
-    console.log(`dislikeTweet result: ${likeTweet}`);
+    console.log(`dislikeTweet txHash: ${likeTweet}`);
 }
 
 async function writeTweet() {
@@ -106,8 +111,26 @@ async function writeTweet() {
     console.log(`write tweet transaction: ${writeTweetResult}`);
 }
 
-//CreateDataAccount();
-//writeTweet();
+
+async function ensureTokenAccount() {
+    const newAccount = await getDataKeyPair();
+    const tokenAddress: PublicKey = new PublicKey(TOKEN_ADDRESS);
+    const fromTokenAccount = await getOrCreateAssociatedTokenAccount(
+        connection,
+        myWallet,
+        tokenAddress,
+        new PublicKey("GxgudfRVS2fdXJ2LWEXCg7y8HUH531xNHMn4hviF77Zh")
+    );
+    console.log(`fromTokenAccount: ${JSON.stringify(fromTokenAccount, (key, value) =>
+        typeof value === 'bigint'
+            ? value.toString()
+            : value // return everything else unchanged
+    )}`);
+}
+
+ //CreateDataAccount();
+ // writeTweet();
 //likeTweet();
-//dislikeTweet();
-getAccountData();
+// dislikeTweet();
+ getAccountData();
+//ensureTokenAccount()
