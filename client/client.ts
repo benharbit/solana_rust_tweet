@@ -9,7 +9,8 @@ import { createAssociatedTokenAccount, createMint, getOrCreateAssociatedTokenAcc
 import path from 'path';
 import { toGreen, toMagenta } from "./utils"
 const anchor = require("@project-serum/anchor");
-const programId = new anchor.web3.PublicKey("GxgudfRVS2fdXJ2LWEXCg7y8HUH531xNHMn4hviF77Zh");
+const PROG_ID_PUBKEY = "38Skw71m45pWoVV9LjRy1atkPyhwk8eW6zifmUKXxbga";
+const programId = new anchor.web3.PublicKey(PROG_ID_PUBKEY);
 
 const TOKEN_ADDRESS: string = "F7xwqJVV7yhucpmpeztAatjteZgAyfuKywNUDLEKeVVN";
 
@@ -34,7 +35,7 @@ const fromAccount = myWallet;
 console.log(`${toGreen("account")}: ${myWallet.publicKey} `);
 
 const idl = JSON.parse(
-    require("fs").readFileSync("target/idl/my_solana_program.json", "utf8")
+    require("fs").readFileSync("target/idl/solana_twitter.json", "utf8")
 );
 
 const opts = {
@@ -44,29 +45,26 @@ const opts = {
 anchor.setProvider(anchor.AnchorProvider.local("https://api.devnet.solana.com"), myWallet.publicKey);
 const program = new anchor.Program(idl, programId);
 
-async function CreateDataAccount() {
+async function CreateDataAccount(message: string) {
     const tweetKeypair = anchor.web3.Keypair.generate();
     const program = new anchor.Program(idl, programId);
-    console.log(`qqq: ${tweetKeypair.secretKey}`)
     fs.writeFileSync(".mysecretkey.json", `[${tweetKeypair.secretKey}]`);
     const secret1 = JSON.parse(
         require("fs").readFileSync(".mysecretkey.json", "utf8")
     );
 
     const newAccount = Keypair.fromSecretKey(Uint8Array.from(secret1));
-
     const result2 = await program
         .rpc
-        .setupPlatform({
+        .sendTweet("I love Solana", {
             accounts: {
                 tweet: tweetKeypair.publicKey,
-                user: myWallet.publicKey,
+                author: myWallet.publicKey,
                 systemProgram: anchor.web3.SystemProgram.programId
             },
             signers: [tweetKeypair]
         })
     console.log(`new account created: ${tweetKeypair.publicKey}`);
-
 }
 
 async function getAccountData() {
@@ -104,7 +102,7 @@ async function dislikeTweet() {
 async function writeTweet() {
     const newAccount = await getDataKeyPair();
     let writeTweetResult = await program.rpc.writeTweet(
-        "Hello World",
+        "Solana is great",
         fromAccount.publicKey,
         { accounts: { tweet: newAccount.publicKey } }
     );
@@ -119,7 +117,7 @@ async function ensureTokenAccount() {
         connection,
         myWallet,
         tokenAddress,
-        new PublicKey("GxgudfRVS2fdXJ2LWEXCg7y8HUH531xNHMn4hviF77Zh")
+        new PublicKey(PROG_ID_PUBKEY)
     );
     console.log(`fromTokenAccount: ${JSON.stringify(fromTokenAccount, (key, value) =>
         typeof value === 'bigint'
@@ -128,9 +126,9 @@ async function ensureTokenAccount() {
     )}`);
 }
 
- //CreateDataAccount();
- // writeTweet();
+CreateDataAccount("I love Solana");
+ //writeTweet();
 //likeTweet();
 // dislikeTweet();
- getAccountData();
+ //getAccountData();
 //ensureTokenAccount()
