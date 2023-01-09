@@ -1,21 +1,19 @@
 use crate::solana_program::program::invoke;
 use anchor_lang::prelude::*;
 use spl_associated_token_account::*;
-use spl_token::*;
 //use anchor_lang::prelude::   anchor_spl::token::Transfer;
 
-declare_id!("GxgudfRVS2fdXJ2LWEXCg7y8HUH531xNHMn4hviF77Zh");
-static TOKEN_ADDRESS: &str = "F7xwqJVV7yhucpmpeztAatjteZgAyfuKywNUDLEKeVVN";
-static TRANSFER_TO_ADDRESS: &str = "BKawZ9Dyzjbbqh6qZnS7EqRqWttx7pK7CaAd7mw7XtUQ";
+declare_id!("38Skw71m45pWoVV9LjRy1atkPyhwk8eW6zifmUKXxbga");
 
 #[program]
-pub mod my_solana_program {
-
+pub mod solana_twitter {
     use super::*;
-    pub fn setup_platform(ctx: Context<TweetPlatform>) -> Result<()> {
+    pub fn send_tweet(ctx: Context<SendTweet>, content: String) -> Result<()> {
         let tweet = &mut ctx.accounts.tweet;
         tweet.likes = 0;
-        tweet.message = ("").to_string();
+        tweet.message = (content).to_string();
+        tweet.creator = ctx.accounts.author.key();
+        tweet.timestamp = Clock::get().unwrap().unix_timestamp;
         Ok(())
     }
 
@@ -24,9 +22,8 @@ pub mod my_solana_program {
         message: String,
         user_public_key: Pubkey,
     ) -> Result<()> {
+        msg!("enter write_tweet aa");
         let tweet = &mut ctx.accounts.tweet;
-        msg!("enter write_tweet");
-        return err!(Errors::CannotUpdateTweet);
         if !tweet.message.trim().is_empty() {
             return err!(Errors::CannotUpdateTweet);
         }
@@ -41,19 +38,20 @@ pub mod my_solana_program {
 
         Ok(())
     }
-    
+
     pub fn like_tweet(ctx: Context<LikeTweet>, user_liking_tweet: Pubkey) -> Result<()> {
         let tweet = &mut ctx.accounts.tweet;
         msg!("enter like tweet");
-        let associated_token_address: anchor_lang::prelude::Pubkey =
-        return Ok(());
+        /* 
+        let associated_token_address: anchor_lang::prelude::Pubkey = return Ok(());
         spl_associated_token_account::get_associated_token_address(
             &user_liking_tweet,
             &TOKEN_ADDRESS.parse().expect("Invalid token address"),
         );
+        */
         msg!("program_id:{}", ctx.program_id);
         msg!("creator:{}", tweet.creator);
-        msg!("token_address: {}", associated_token_address);
+        //msg!("token_address: {}", associated_token_address);
         msg!("zzzzzzz");
         msg!("token program id:  {}", spl_token::id());
         msg!("ppppppp");
@@ -73,10 +71,10 @@ pub mod my_solana_program {
             return err!(Errors::ReachedMaxLikes);
         }
 
-       // let mut iter = tweet.people_who_liked.iter();
-       // if iter.any(|&v| v == user_liking_tweet) {
-       //     return err!(Errors::UserLikedTweet);
-       // }
+        // let mut iter = tweet.people_who_liked.iter();
+        // if iter.any(|&v| v == user_liking_tweet) {
+        //     return err!(Errors::UserLikedTweet);
+        // }
 
         let ix = spl_token::instruction::transfer(
             &spl_token::id(),
@@ -86,8 +84,15 @@ pub mod my_solana_program {
             &[&user_liking_tweet],
             100,
         )?;
-        
-        invoke(&ix, &[tweet.to_account_info(), ctx.accounts.send_from.to_account_info()]).unwrap();
+
+        invoke(
+            &ix,
+            &[
+                tweet.to_account_info(),
+                ctx.accounts.send_from.to_account_info(),
+            ],
+        )
+        .unwrap();
         tweet.likes += 1;
         tweet.people_who_liked.push(user_liking_tweet);
         return Ok(());
@@ -116,11 +121,11 @@ pub mod my_solana_program {
 }
 
 #[derive(Accounts)]
-pub struct TweetPlatform<'info> {
-    #[account(init, payer = user, space = 10000 )]
+pub struct SendTweet<'info> {
+    #[account(init, payer = author, space = 10000 )]
     pub tweet: Account<'info, Tweet>,
     #[account(mut)]
-    pub user: Signer<'info>,
+    pub author: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -134,9 +139,12 @@ pub struct WriteTweet<'info> {
 pub struct LikeTweet<'info> {
     #[account(mut)]
     pub tweet: Account<'info, Tweet>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub send_from: AccountInfo<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_program: AccountInfo<'info>,
     #[account(mut)]
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_account: AccountInfo<'info>,
 }
 
@@ -155,6 +163,7 @@ pub struct Tweet {
     creator: Pubkey,
     people_who_liked: Vec<Pubkey>, // with  #[derive(Default)] we can assign default values
     people_who_disliked: Vec<Pubkey>,
+    timestamp: i64,
 }
 
 #[error_code]
